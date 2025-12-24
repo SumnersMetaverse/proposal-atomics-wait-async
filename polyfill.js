@@ -66,10 +66,12 @@
         helpers.push(h);
     }
 
-    // Atomics.waitAsync always returns a promise.  Throws standard errors
-    // for parameter validation.  The promise is resolved with a string as from
-    // Atomics.wait, or, in the case something went completely wrong, it is
-    // rejected with an error string.
+    // Atomics.waitAsync returns an object with 'async' and 'value' properties.
+    // Throws standard errors for parameter validation.
+    // Returns { async: false, value: "not-equal" | "timed-out" } for synchronous resolution,
+    // or { async: true, value: promise } for asynchronous resolution.
+    // The promise is resolved with a string as from Atomics.wait, or, in the case 
+    // something went completely wrong, it is rejected with an error string.
 
     function waitAsync(ia, index_, value_, timeout_) {
         if (typeof ia != "object" || !(ia instanceof Int32Array) || !(ia.buffer instanceof SharedArrayBuffer))
@@ -89,11 +91,15 @@
         // Optimization, avoid the helper thread in this common case.
 
         if (Atomics.load(ia, index) != value)
-            return Promise.resolve("not-equal");
+            return { async: false, value: "not-equal" };
+
+        // Handle immediate timeout (0) synchronously
+        if (timeout === 0)
+            return { async: false, value: "timed-out" };
 
         // General case, we must wait.
 
-        return new Promise(function (resolve, reject) {
+        let promise = new Promise(function (resolve, reject) {
             let h = allocHelper();
             h.onmessage = function (ev) {
                 // Free the helper early so that it can be reused if the resolution
@@ -126,7 +132,9 @@
             // postMessage is necessary.
 
             h.postMessage(['wait', ia, index, value, timeout]);
-        })
+        });
+
+        return { async: true, value: promise };
     }
 
     Object.defineProperty(Atomics, 'waitAsync', {
