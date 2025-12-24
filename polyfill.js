@@ -70,7 +70,7 @@
     // Throws standard errors for parameter validation.
     // Returns { async: false, value: "not-equal" | "timed-out" } for synchronous resolution,
     // or { async: true, value: promise } for asynchronous resolution.
-    // The promise is resolved with a string as from Atomics.wait, or, in the case 
+    // The promise is resolved with a string as from Atomics.wait, or, in the case
     // something went completely wrong, it is rejected with an error string.
 
     function waitAsync(ia, index_, value_, timeout_) {
