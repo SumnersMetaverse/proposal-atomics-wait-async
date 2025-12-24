@@ -20,7 +20,13 @@
   test1();
   
   function test1() {
-    Atomics.waitAsync(ia, 37, 0x1337, 1000).then(function (r) { log("Resolved: " + r); test2(); });
+    var result = Atomics.waitAsync(ia, 37, 0x1337, 1000);
+    if (result.async) {
+      result.value.then(function (r) { log("Resolved: " + r); test2(); });
+    } else {
+      log("Resolved: " + result.value);
+      test2();
+    }
   }
 
   var code = `
@@ -38,14 +44,35 @@
     var w = new Worker("data:application/javascript," + encodeURIComponent(code));
     w.onmessage = function (ev) { log(ev.data) };
     w.postMessage(sab);
-    Atomics.waitAsync(ia, 37, 0x1337).then(function (r) { log("Resolved: " + r); test3(w); });
+    var result = Atomics.waitAsync(ia, 37, 0x1337);
+    if (result.async) {
+      result.value.then(function (r) { log("Resolved: " + r); test3(w); });
+    } else {
+      log("Resolved: " + result.value);
+      test3(w);
+    }
   }
 
   function test3(w) {
     w.postMessage(false);
-    Atomics.waitAsync(ia, 37, 0x1337).then(function (r) { log("Resolved 1: " + r); });
-    Atomics.waitAsync(ia, 37, 0x1337).then(function (r) { log("Resolved 2: " + r); });
-    Atomics.waitAsync(ia, 37, 0x1337).then(function (r) { log("Resolved 3: " + r); });
+    var result1 = Atomics.waitAsync(ia, 37, 0x1337);
+    if (result1.async) {
+      result1.value.then(function (r) { log("Resolved 1: " + r); });
+    } else {
+      log("Resolved 1: " + result1.value);
+    }
+    var result2 = Atomics.waitAsync(ia, 37, 0x1337);
+    if (result2.async) {
+      result2.value.then(function (r) { log("Resolved 2: " + r); });
+    } else {
+      log("Resolved 2: " + result2.value);
+    }
+    var result3 = Atomics.waitAsync(ia, 37, 0x1337);
+    if (result3.async) {
+      result3.value.then(function (r) { log("Resolved 3: " + r); });
+    } else {
+      log("Resolved 3: " + result3.value);
+    }
     
   }
 
